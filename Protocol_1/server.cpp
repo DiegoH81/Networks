@@ -34,30 +34,35 @@ void reader(int in_socket)
     switch (opt)
     {
     case 'L':
-      nick = prot::R_CLI_SV_login(in_socket);
+    {
+      nick = prt_recv::login(in_socket);
       clients[nick] = in_socket;
-      prot::W_login_SV_CLI(in_socket);
+      prt_send::login_response(in_socket);
       break;
-    
+    }
     case 'B':
-      auto data = prot::R_broadcast_CLI_SV(in_socket);
+    {
+      auto data = prt_recv::broadcast(in_socket);
       for (auto &c : clients)
-        prot::W_broadcast_SV_CLI(data, nick, in_socket);
+        prt_send::broadcast_response(data, nick, c.second);
       break;
-
+    }
     case 'U':
-      auto data = prot::R_unicast_CLI_SV(in_socket);
+    {
+      auto data = prt_recv::unicast(in_socket);
       auto &msg = data.first;
       auto &in_nick = data.second;
 
-      prot::W_unicast_SV_CLI(msg, nick, clients[in_nick]);
+      prt_send::unicast_response(msg, nick, clients[in_nick]);
       break;
-    
+    }
     case 'O':
-      clients.erase(in_socket);
+    {
+      close(clients[nick]);
+      clients.erase(nick);
       listening = false;
       break;
-
+    }
     default:
       break;
     }

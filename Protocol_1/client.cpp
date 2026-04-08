@@ -28,13 +28,18 @@ void reader(int in_socket)
     switch (opt)
     {
     case 'b':
-      auto data = prot::R_broadcast_SV_CLI(in_socket);
+    {
+
+      auto data = prt_recv::broadcast_response(in_socket);
       std::cout << data.first << ": " << data.second << "\n";  
       break;
-    
+    }
     case 'u':
-      auto data = prot::R_unicast_SV_CLI(in_socket);
+    {
+      auto data = prt_recv::unicast_response(in_socket);
       std::cout << data.first << ": " << data.second << "\n";  
+      break;
+    }
     default:
       break;
     }
@@ -68,47 +73,71 @@ int main(void)
     std::cout << "3. Broadcast\n";
     std::cout << "4. Unicast\n";
 
-    int option = 0;
-    std::cin >> option;
+    std::string buffer;
+    std::cout << "Enter option: ";
+    std::getline(std::cin, buffer);
+
+    int option = std::stoi(buffer);
 
     switch (option)
     {
     case 1:
+    {
       std::string nick;
       std::cout << "Enter nickname: ";
       std::getline(std::cin, nick);
 
-      prot::W_login_CLI_SV(nick, SocketFD);
-      if (prot::R_SV_CLI_login(SocketFD))
+      prt_send::login(nick, SocketFD);
+      if (prt_recv::login_response(SocketFD))
         std::thread(reader, SocketFD).detach();
 
       break;
-
+    }
     case 2:
-      prot::W_logout_CLI_SV(SocketFD);
-      connected = false;
+    {
+      if (connected)
+      {
+        prt_send::logout(SocketFD);
+        connected = false;
+      }
+      else
+        std::cout << "Please login first!\n";
+        
       break;
-
+    }
     case 3:
-      std::string msg;
-      std::cout << "Enter message: ";
-      std::getline(std::cin, msg);
+    {
+      if (connected)
+      {
+        std::string msg;
+        std::cout << "Enter message: ";
+        std::getline(std::cin, msg);
+  
+        prt_send::broadcast(msg, SocketFD);
+      }
+      else
+        std::cout << "Please login first!\n";
 
-      prot::W_broadcast_CLI_SV(msg, SocketFD);
       break;
-
+    }
     case 4:
-      std::string dst;
-      std::cout << "Enter destinatary: ";
-      std::getline(std::cin, dst);
-
-      std::string msg;
-      std::cout << "Enter message: ";
-      std::getline(std::cin, msg);
-
-      prot::W_unicast_CLI_SV(msg, dst, SocketFD);
+    {
+      if (connected)
+      {
+        std::string dst;
+        std::cout << "Enter destinatary: ";
+        std::getline(std::cin, dst);
+  
+        std::string msg;
+        std::cout << "Enter message: ";
+        std::getline(std::cin, msg);
+  
+        prt_send::unicast(msg, dst, SocketFD);
+      }
+      else
+        std::cout << "Please login first!\n";
       break;
-
+    }
     default:
       break;
     }
