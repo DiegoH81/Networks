@@ -2,9 +2,11 @@
 #define PROTOCOLS_H
 
 #include <unistd.h>
-
 #include <string>
 #include <vector>
+
+
+#include "json.hpp"
 
 // Auxiliar functions
 
@@ -44,6 +46,22 @@ int read_number(int in_socket, int in_length)
    std::string num = read_string(in_socket, in_length, in_length);
 
    return std::stoi(num);
+}
+
+std::string read_binary_file(const std::string& filename)
+{
+    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::string buffer;
+    buffer.resize(size);
+
+
+    if (file.read(&buffer[0], size))
+        return buffer;
+
+    return "";
 }
 
 
@@ -90,6 +108,34 @@ namespace prt_send
 
       std::string to_send = "U" + get_number(in_msg.length(), bytes_msg) + in_msg + 
                                   get_number(in_nick.length(), bytes_nick) + in_nick;
+      write(in_socket, to_send.c_str(), to_send.length());
+   }
+
+   void list(int in_socket)
+   {
+      write(in_socket, "T", 1);
+   }
+   
+   void file(std::string file_name, std::string file, std::string dest, int in_socket)
+   {
+      std::string to_send;
+
+
+      if(file.size() >= 100000)
+         file.resize(99999);
+
+      if(file_name.size() >= 100000)
+         file_name.resize(99999);
+
+      if(dest.size() >= 100000)
+         dest.resize(99999);
+
+      int bytes = 5;
+
+      std::string to_send = "F" + get_number(file.length(), bytes) + file + 
+                                  get_number(file_name.length(), bytes) + file_name +
+                                  get_number(dest.length(), bytes) + dest;
+      
       write(in_socket, to_send.c_str(), to_send.length());
    }
 
@@ -142,6 +188,41 @@ namespace prt_send
                                   get_number(in_msg.length(), bytes_msg) + in_msg;
       write(in_socket, to_send.c_str(), to_send.length());
    }
+
+   void list_response(std::vector<std::string>& in_list, int in_socket)
+   {
+      std::string to_send;
+
+      nlohmann::json j = in_list;
+
+      std::string to_send = j.dump();
+
+      write(in_socket, to_send.c_str(), to_send.length());
+   }
+
+   void file_response(std::string file_name, std::string file, std::string src, int in_socket)
+   {
+      std::string to_send;
+
+
+      if(file.size() >= 100000)
+         file.resize(99999);
+
+      if(file_name.size() >= 100000)
+         file_name.resize(99999);
+
+      if(src.size() >= 100000)
+         src.resize(99999);
+
+      int bytes = 5;
+
+      std::string to_send = "f" + get_number(file.length(), bytes) + file + 
+                                  get_number(file_name.length(), bytes) + file_name +
+                                  get_number(src.length(), bytes) + src;
+      
+      write(in_socket, to_send.c_str(), to_send.length());
+   }
+   
 }
 
 namespace prt_recv
@@ -203,6 +284,30 @@ namespace prt_recv
 
       return {nick, msg};
    }
+
+   std::vector<std::string> list_response(int in_socket)
+   {
+      int L = read_number(in_socket, 5);
+      auto list_json = read_string(in_socket, L, 2000);
+      
+      std::vector<std::string> to_send;
+
+      nlohmann::json j = nlohmann::json::parse(list_json);
+      to_send = j.get<std::vector<std::string>>();
+
+      return to_send;
+   }
+
+   void file_response(std::string& file_name, std::string& file, std::string& dest, int in_socket)
+   {
+      int L = read_number(in_socket, 5);
+      file = read_string(in_socket, L, 2000);
+      L = read_number(in_socket, 5);
+      file_name = read_string(in_socket, L, 2000);
+      L = read_number(in_socket, 5);
+      dest = read_string(in_socket, L, 2000);
+   }
+
 }
 
 #endif

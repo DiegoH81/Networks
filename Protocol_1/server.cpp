@@ -56,6 +56,28 @@ void reader(int in_socket)
       prt_send::unicast_response(msg, nick, clients[in_nick]);
       break;
     }
+    case 'T':
+    {
+      std::vector<std::string> clients_vec;
+
+      for (auto &c : clients)
+        clients.push_back(c.first);
+
+      prt_send::list_response(clients_vec, clients[nick]);
+
+      break;
+    }
+    case 'F':
+    {
+      std::string file, file_name, dest;
+
+      prt_recv::file_response(file_name, file, dest, in_socket);
+      
+
+      prt_send::file_response(file_name, file, nick, clients[dest]);
+
+      break;
+    }
     case 'O':
     {
       close(clients[nick]);

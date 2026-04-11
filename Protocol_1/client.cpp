@@ -40,6 +40,27 @@ void reader(int in_socket)
       std::cout << data.first << ": " << data.second << "\n";  
       break;
     }
+    case 't':
+    { 
+      auto clients_list = list_response(in_socket);
+
+      std::cout << "LIST\n";
+      for(auto &c : clients_list)
+        std::cout << c << "\n";
+
+        std::cout << "\n";
+
+      break;
+    }
+    case 'f':
+    {
+      std::string& file_name, file, ori;
+      prt_recv(file_name, file, ori, in_socket);
+
+      std::cout << ori << ": " << file_name << ": " << file << "\n";
+
+      break;
+    }
     default:
       break;
     }
@@ -72,6 +93,8 @@ int main(void)
     std::cout << "2. Logout\n";
     std::cout << "3. Broadcast\n";
     std::cout << "4. Unicast\n";
+    std::cout << "5. List\n";
+    std::cout << "6. File\n";
 
     std::string buffer;
     std::cout << "Enter option: ";
@@ -133,6 +156,34 @@ int main(void)
         std::getline(std::cin, msg);
   
         prt_send::unicast(msg, dst, SocketFD);
+      }
+      else
+        std::cout << "Please login first!\n";
+      break;
+    }
+    case 5:
+    {
+      if (connected)
+        prt_send::list(SocketFD);
+      else
+        std::cout << "Please login first!\n";
+      break;
+    }
+    case 6:
+    {
+      if (connected)
+      {
+        std::string file_name;
+        std::cout << "Enter file name: ";
+        std::getline(std::cin, file_name);
+  
+        std::string dst;
+        std::cout << "Enter destinatary: ";
+        std::getline(std::cin, dst);
+
+        std::string file = read_binary_file(file_name);
+  
+        prt_send::file(file_name, file, dst, SocketFD);
       }
       else
         std::cout << "Please login first!\n";
