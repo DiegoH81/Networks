@@ -13,7 +13,7 @@
 
 #include "protocols.h"
 
-bool connected = true;
+bool connected = false;
 
 void reader(int in_socket)
 {
@@ -42,20 +42,20 @@ void reader(int in_socket)
     }
     case 't':
     { 
-      auto clients_list = list_response(in_socket);
+      
+      auto clients_list = prt_recv::list_response(in_socket);
 
-      std::cout << "LIST\n";
+      std::cout << "Server: ";
       for(auto &c : clients_list)
-        std::cout << c << "\n";
-
-        std::cout << "\n";
+        std::cout << c << " ";
+      std::cout << "\n";
 
       break;
     }
     case 'f':
     {
-      std::string& file_name, file, ori;
-      prt_recv(file_name, file, ori, in_socket);
+      std::string file_name, file, ori;
+      prt_recv::file_response(file_name, file, ori, in_socket);
 
       std::cout << ori << ": " << file_name << ": " << file << "\n";
 
@@ -86,16 +86,22 @@ int main(void)
 
   
 
-  while(connected)
+  while(true)
   {
     std::cout << "MENU\n";
-    std::cout << "1. Login\n";
-    std::cout << "2. Logout\n";
-    std::cout << "3. Broadcast\n";
-    std::cout << "4. Unicast\n";
-    std::cout << "5. List\n";
-    std::cout << "6. File\n";
 
+    if (!connected)
+      std::cout << "1. Login\n";
+
+    if (connected)
+    {
+      std::cout << "2. Logout\n";
+      std::cout << "3. Broadcast\n";
+      std::cout << "4. Unicast\n";
+      std::cout << "5. List\n";
+      std::cout << "6. File\n";
+    }
+      
     std::string buffer;
     std::cout << "Enter option: ";
     std::getline(std::cin, buffer);
@@ -106,14 +112,29 @@ int main(void)
     {
     case 1:
     {
-      std::string nick;
-      std::cout << "Enter nickname: ";
-      std::getline(std::cin, nick);
+      if (connected)
+        break;
 
-      prt_send::login(nick, SocketFD);
-      if (prt_recv::login_response(SocketFD))
-        std::thread(reader, SocketFD).detach();
 
+      do
+      {
+        std::string nick;
+        std::cout << "Enter nickname: ";
+        std::getline(std::cin, nick);
+  
+        prt_send::login(nick, SocketFD);
+        connected = prt_recv::k_response(SocketFD);
+
+        if (connected)
+          std::thread(reader, SocketFD).detach();
+        else // Error
+        {
+          std::string error = prt_recv::error(SocketFD);
+          std::cout << "SERVER: " << error << "\n";
+        }
+      } while (!connected);
+        
+        
       break;
     }
     case 2:
@@ -121,6 +142,7 @@ int main(void)
       if (connected)
       {
         prt_send::logout(SocketFD);
+        prt_recv::k_response(SocketFD);
         connected = false;
       }
       else

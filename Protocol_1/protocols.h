@@ -2,6 +2,7 @@
 #define PROTOCOLS_H
 
 #include <unistd.h>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -118,9 +119,6 @@ namespace prt_send
    
    void file(std::string file_name, std::string file, std::string dest, int in_socket)
    {
-      std::string to_send;
-
-
       if(file.size() >= 100000)
          file.resize(99999);
 
@@ -141,18 +139,19 @@ namespace prt_send
 
    // SV to client
 
-   void error(std::string& in_msg, int in_socket)
+   void error(const std::string& in_msg, int in_socket)
    {
       int in_bytes = 5;
 
-      if (in_msg.length() >= 100000)
-         in_msg.resize(99999);
+      auto msg = in_msg;
+      if (msg.length() >= 100000)
+         msg.resize(99999);
 
-      std::string to_send = "E" + get_number(in_msg.length(), in_bytes) + in_msg;
+      std::string to_send = "E" + get_number(msg.length(), in_bytes) + msg;
       write(in_socket, to_send.c_str(), to_send.length());
    }
 
-   void login_response(int in_socket)
+   void k_response(int in_socket)
    {
       write(in_socket, "K", 1);
    }
@@ -191,20 +190,22 @@ namespace prt_send
 
    void list_response(std::vector<std::string>& in_list, int in_socket)
    {
-      std::string to_send;
+      int bytes_list = 5;
 
       nlohmann::json j = in_list;
 
-      std::string to_send = j.dump();
+      std::string list_str = j.dump();
+      if (list_str.length() >= 100000)
+         list_str.resize(99999);
+      
+
+      std::string to_send = "t" + get_number(list_str.length(), bytes_list) + list_str;
 
       write(in_socket, to_send.c_str(), to_send.length());
    }
 
    void file_response(std::string file_name, std::string file, std::string src, int in_socket)
    {
-      std::string to_send;
-
-
       if(file.size() >= 100000)
          file.resize(99999);
 
@@ -252,7 +253,7 @@ namespace prt_recv
 
    // Server to client
 
-   bool login_response(int in_socket)
+   bool k_response(int in_socket)
    {
       if (read_string(in_socket, 1, 1) == "K")
          return true;

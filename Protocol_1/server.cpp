@@ -36,8 +36,20 @@ void reader(int in_socket)
     case 'L':
     {
       nick = prt_recv::login(in_socket);
+
+      if (clients.find(nick) != clients.end())
+      {
+        prt_send::error("Username already taken!", in_socket);
+        break;
+      }
+
       clients[nick] = in_socket;
-      prt_send::login_response(in_socket);
+      prt_send::k_response(in_socket);
+
+      std::cout << "\n";
+      for (auto& i: clients)
+        std::cout << i.first << " - " << i.second <<"\n";
+
       break;
     }
     case 'B':
@@ -61,7 +73,7 @@ void reader(int in_socket)
       std::vector<std::string> clients_vec;
 
       for (auto &c : clients)
-        clients.push_back(c.first);
+        clients_vec.push_back(c.first);
 
       prt_send::list_response(clients_vec, clients[nick]);
 
@@ -80,17 +92,15 @@ void reader(int in_socket)
     }
     case 'O':
     {
-      close(clients[nick]);
+      prt_send::k_response(in_socket);
       clients.erase(nick);
-      listening = false;
       break;
     }
     default:
-      break;
-    }
-
+    break;
   }
-
+  
+  }
   close(in_socket);
 }
 
@@ -113,16 +123,10 @@ int main(void)
 
   printf("----------SERVER----------\n");
   
-  for(;;)
+  while(true)
   {
     int ConnectFD = accept(SocketFD, NULL, NULL);
     std::thread(reader, ConnectFD).detach();
-    
-    
-    std::cout << "\n\n\n\n";
-    for (auto &c: clients)
-        std::cout << c.first << " : " << c.second << "\n";
-    std::cout << "\n\n\n\n";
   }
 
   close(SocketFD);
