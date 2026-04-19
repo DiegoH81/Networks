@@ -10,7 +10,6 @@
 #include "json.hpp"
 
 // Auxiliar functions
-
 std::string get_number(int in_number, int in_bytes)
 {
    std::string to_return(in_bytes, '0');
@@ -30,29 +29,40 @@ std::string get_number(int in_number, int in_bytes)
    return to_return;
 }
 
-std::string read_string(int in_socket, int in_length, int in_buffer_length)
+std::string read_string(int in_socket, int in_length)
 {
-   char *buffer = new char[in_buffer_length];
+   std::string to_return;
    int n;
-   n = read(in_socket, buffer, in_length);
-      buffer[n] = '\0';
-      
-   std::string to_return (buffer);
-   delete[] buffer;
+   to_return.resize(in_length);
+
+   int total = 0;
+
+   while (total < in_length)
+   {
+      n = read(in_socket, &to_return[total], in_length - total);
+
+      if (n <= 0)
+         break;
+         
+      total += n;
+   }
+
    return to_return;
 }
 
 int read_number(int in_socket, int in_length)
 {
-   std::string num = read_string(in_socket, in_length, in_length);
+   std::string num = read_string(in_socket, in_length);
 
    return std::stoi(num);
 }
 
 std::string read_binary_file(const std::string& filename)
 {
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
-    std::streamsize size = file.tellg();
+    std::ifstream file(filename, std::ios::binary);
+
+    file.seekg(0, std::ios::end);
+    int size = file.tellg();
     file.seekg(0, std::ios::beg);
 
     std::string buffer;
@@ -65,13 +75,25 @@ std::string read_binary_file(const std::string& filename)
     return "";
 }
 
+bool write_binary_file(const std::string& filename, const std::string& data)
+{
+    std::ofstream file(filename, std::ios::binary | std::ios::out | std::ios::trunc);
+
+    if (!file.is_open())
+        return false;
+
+    if (file.write(data.data(), data.size()))
+        return true;
+
+    return false;
+}
 
 namespace prt_send
 {
    // Client to SV
    void login(std::string& in_nickname, int in_socket)
    {
-      int in_bytes = 3;
+      int in_bytes = 4;
 
       if (in_nickname.length() >= 1000)
          in_nickname.resize(999);
@@ -231,22 +253,22 @@ namespace prt_recv
    // Client to SV
    std::string login(int in_socket)
    {
-      int L = read_number(in_socket, 3);
-      return read_string(in_socket, L, 2000);
+      int L = read_number(in_socket, 4);
+      return read_string(in_socket, L);
    }
 
    std::string broadcast(int in_socket)
    {
       int L = read_number(in_socket, 7);
-      return read_string(in_socket, L, 2000);
+      return read_string(in_socket, L);
    }
 
    std::pair<std::string, std::string> unicast(int in_socket)
    {
       int L = read_number(in_socket, 5);
-      auto msg = read_string(in_socket, L, 2000);
+      auto msg = read_string(in_socket, L);
       L = read_number(in_socket, 7);
-      auto nick = read_string(in_socket, L, 2000);
+      auto nick = read_string(in_socket, L);
 
       return {msg, nick};
    }
@@ -255,7 +277,7 @@ namespace prt_recv
 
    bool k_response(int in_socket)
    {
-      if (read_string(in_socket, 1, 1) == "K")
+      if (read_string(in_socket, 1) == "K")
          return true;
       return false;
    }
@@ -263,15 +285,15 @@ namespace prt_recv
    std::string error(int in_socket)
    {
       int L = read_number(in_socket, 5);
-      return read_string(in_socket, L, 2000);
+      return read_string(in_socket, L);
    }
 
    std::pair<std::string, std::string> broadcast_response(int in_socket)
    {
       int L = read_number(in_socket, 3);
-      auto nick = read_string(in_socket, L, 2000);
+      auto nick = read_string(in_socket, L);
       L = read_number(in_socket, 7);
-      auto msg = read_string(in_socket, L, 2000);
+      auto msg = read_string(in_socket, L);
 
       return {nick, msg};
    }
@@ -279,9 +301,9 @@ namespace prt_recv
    std::pair<std::string, std::string> unicast_response(int in_socket)
    {
       int L = read_number(in_socket, 7);
-      auto nick = read_string(in_socket, L, 2000);
+      auto nick = read_string(in_socket, L);
       L = read_number(in_socket, 5);
-      auto msg = read_string(in_socket, L, 2000);
+      auto msg = read_string(in_socket, L);
 
       return {nick, msg};
    }
@@ -289,7 +311,7 @@ namespace prt_recv
    std::vector<std::string> list_response(int in_socket)
    {
       int L = read_number(in_socket, 5);
-      auto list_json = read_string(in_socket, L, 2000);
+      auto list_json = read_string(in_socket, L);
       
       std::vector<std::string> to_send;
 
@@ -302,11 +324,11 @@ namespace prt_recv
    void file_response(std::string& file_name, std::string& file, std::string& dest, int in_socket)
    {
       int L = read_number(in_socket, 5);
-      file = read_string(in_socket, L, 2000);
+      file = read_string(in_socket, L);
       L = read_number(in_socket, 5);
-      file_name = read_string(in_socket, L, 2000);
+      file_name = read_string(in_socket, L);
       L = read_number(in_socket, 5);
-      dest = read_string(in_socket, L, 2000);
+      dest = read_string(in_socket, L);
    }
 
 }
