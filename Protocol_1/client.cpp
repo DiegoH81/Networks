@@ -69,7 +69,8 @@ void reader(int in_socket)
          std::string file_name, file, ori;
          prt_recv::file_response(file_name, file, ori, in_socket);
 
-         write_binary_file("New_" + file_name , file);
+         all_msgs.push_back(std::string("SERVER: File received"));
+         write_binary_file("new_" + file_name , file);
 
          break;
       }
@@ -77,7 +78,7 @@ void reader(int in_socket)
       {
          std::string error = prt_recv::error(in_socket);
 
-         std::string msg_to_push = "SERVER: " + error;
+         std::string msg_to_push = "ERROR: " + error;
          all_msgs.push_back(msg_to_push);
          break;
       }
@@ -172,7 +173,7 @@ int main(void)
             else
             {
                std::string error = prt_recv::error(SocketFD);
-               std::cout << "\nSERVER: " + error << "\n";
+               std::cout << "\nERROR: " + error << "\n";
             }
 
          } while (!connected);
@@ -246,7 +247,12 @@ int main(void)
             std::getline(std::cin, dst);
 
             std::string file = read_binary_file(file_name);
-      
+            if (file.empty())
+            {
+               all_msgs.push_back(std::string("ERROR: Empty or unexistent file"));
+               break;
+            }
+
             prt_send::file(file_name, file, dst, SocketFD);
          }
          else

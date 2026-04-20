@@ -24,22 +24,24 @@ public:
        g,
        h,
        i,
-       current_move;
+       turn;
    char STATUS;
 
 TicTacToe():
-   a(0), b(0), c(0), d(0), e(0), f(0), g(0), h(0), i(0), current_move(0), STATUS('N')
+   a(0), b(0), c(0), d(0), e(0), f(0), g(0), h(0), i(0), turn(CROSS_PIECE), STATUS('N') // Status = N T O X
    {}
+
 
 void print()
 {
    std::vector<int*> board = {&a, &b, &c, &d, &e, &f, &g, &h, &i};
 
-   std::cout << "\n";
+   std::cout << "============ GAME ============\n";
 
    for (int i = 0; i < 3; i++)
    {
-      std::cout << "| ";
+      std::cout << "-------\n";
+      std::cout << "|";
       for (int j = 0; j < 3; j++)
       {
          int pos = 3 * i + j;
@@ -49,19 +51,24 @@ void print()
             std::cout << "O";
          else
             std::cout << " ";
+         std::cout << "|";
       }
-      std::cout << " |\n";
+      std::cout << "\n";
    }
-
-   std::cout << "\nCurrent_move: " << current_move << "\n";
+   std::cout << "-------\n";
+   std::cout << "Current turn: " << (turn == CROSS_PIECE? "X" : "O") << "\n";
+   std::cout << "\n\nTOKEN LIST:\n";
+   std::cout << "O\t-\tSERVER-CLIENT\n";
+   std::cout << "X\t-\tCLIENT\n";
 }
 
-void play(int value)
+void play()
 {
    std::vector<int*> board = {&a, &b, &c, &d, &e, &f, &g, &h, &i};
    bool valid = false;
    int row = 0, col = 0;
    
+
    int pos = 0;
    
    while (!valid)
@@ -81,14 +88,13 @@ void play(int value)
 
       if (*board[pos] == 0)
       {
-         *board[pos] = value;
+         *board[pos] = turn;
          valid = true;
       }
       else
          std::cout << "Box already used, pick another position!\n";
    }
    
-   current_move = pos;
    
 
    int cur_status = get_status();
@@ -98,6 +104,11 @@ void play(int value)
       STATUS = 'O';
    else if (cur_status == 3)
       STATUS = 'T';
+
+   if (turn == CROSS_PIECE)
+      turn = CIRCLE_PIECE;
+   else
+      turn = CROSS_PIECE;
 }
 
 int get_status() // 0 None, 1 X, 2 O, 3 TIE
@@ -125,10 +136,10 @@ bool is_playing()
    switch (STATUS)
    {
    case 'X':
-      std::cout << "Player wins!\n";
+      std::cout << "CLIENT wins!\n";
       break;
    case 'O':
-      std::cout << "CPU wins!\n";
+      std::cout << "SERVER-CLIENT wins!\n";
       break;
    case 'T':
       std::cout << "TIE!\n";
@@ -222,7 +233,7 @@ TicTacToe safe_read(int in_socket)
 
 void send_game(int in_socket, TicTacToe &in_game)
 {
-    write(in_socket, &in_game, sizeof(in_game));
+   write(in_socket, &in_game, sizeof(in_game));
 }
 
 

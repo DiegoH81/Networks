@@ -32,29 +32,26 @@ int main(void)
    while (true)
    {
       system("clear");
-      printf("============ CLIENT GAME ============\n");
 
       TicTacToe game;
       
+      game.print();
       while (true)
       {
+         game.play();
          send_game(SocketFD, game);
-         game = safe_read(SocketFD);
-         game.print();
-         std::cout << "\n\n";
-         
+         system("clear");
+         game.print();  
+
          if (!game.is_playing())
             break;
-   
-         
-         //system("clear");
-         
-         
-         game.play(CIRCLE_PIECE);
-         
-         game.print();
-         std::cout << "\n\n";
 
+
+         game = safe_read(SocketFD);
+
+         system("clear");
+         game.print(); 
+         
          if (!game.is_playing())
             break;
       }

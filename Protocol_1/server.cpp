@@ -67,7 +67,7 @@ void reader(int in_socket)
          
          std::cout << "\n";
          for (auto& i: clients)
-            std::cout << "C:" << i.first << " - Socket: " << i.second <<"\n";
+            std::cout << "C: " << i.first << " - Socket: " << i.second <<"\n";
          lock_B.unlock();
 
          break;
@@ -145,7 +145,7 @@ void reader(int in_socket)
 
          std::cout << "\n";
          for (auto& i: clients)
-            std::cout << "C:" << i.first << " - Socket: " << i.second <<"\n";
+            std::cout << "C: " << i.first << " - Socket: " << i.second <<"\n";
          lock.unlock();
          
          listening = false;
