@@ -34,6 +34,7 @@ int main(void)
    listen(SocketFD, 10);
 
    
+   std::cout << "============ SERVER ============\n";
    while(true)
    {
       int ConnectFD = accept(SocketFD, NULL, NULL);
@@ -41,23 +42,23 @@ int main(void)
       while (true)
       {
          system("clear");
-         printf("============ SERVER GAME ============\n");
          
          TicTacToe game;
+         game.print();
          while (true)
          {
             game = safe_read(ConnectFD);
-            //system("clear");
+            system("clear");
             game.print();
-            std::cout << "\n\n";
 
             if (!game.is_playing())
                break;
 
-            game.play(CROSS_PIECE);
-            send_game(ConnectFD, game);      
+            game.play();
+            send_game(ConnectFD, game);
+
+            system("clear");
             game.print();
-            std::cout << "\n\n";
             
             if (!game.is_playing())
                break;
