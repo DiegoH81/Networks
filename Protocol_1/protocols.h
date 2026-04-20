@@ -61,8 +61,11 @@ std::string read_binary_file(const std::string& filename)
 {
     std::ifstream file(filename, std::ios::binary);
 
+    if (!file.is_open())
+        return ""; 
+
     file.seekg(0, std::ios::end);
-    int size = file.tellg();
+    std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
 
     std::string buffer;
@@ -214,7 +217,15 @@ namespace prt_send
    {
       int bytes_list = 5;
 
-      nlohmann::json j = in_list;
+      nlohmann::json j;
+
+      int counter = 1;
+
+      for (auto &n: in_list)
+      {
+         j["Client_" + std::to_string(counter)] = n;
+         counter++;
+      }
 
       std::string list_str = j.dump();
       if (list_str.length() >= 100000)
@@ -313,10 +324,12 @@ namespace prt_recv
       int L = read_number(in_socket, 5);
       auto list_json = read_string(in_socket, L);
       
+      nlohmann::json j = nlohmann::json::parse(list_json);
+      
       std::vector<std::string> to_send;
 
-      nlohmann::json j = nlohmann::json::parse(list_json);
-      to_send = j.get<std::vector<std::string>>();
+      for (auto& element : j.items())
+         to_send.push_back(element.value());
 
       return to_send;
    }
