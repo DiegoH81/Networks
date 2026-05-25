@@ -15,7 +15,8 @@
 #include "protocols_TCP.h"
 #include "UDP_class.h"
 
-
+bool can_continue = false;
+bool resend= false;
 bool connected = false;
 bool is_tcp = false;
 
@@ -126,11 +127,15 @@ void reader_UDP(int in_socket)
             std::string ori, dest, file_name, file;
             bool ok = client.parse_file(msg, ori, dest, file_name, file);
             
+            
             if (!ok)
             {
-                all_msgs.push_back("ERROR: Archivo corrupto");
-                break;
+                client.send_message_udp_AN(in_socket, sender_addr, 'N', 0, 0);
+                continue;
             }
+            
+            
+            client.send_message_udp_AN(in_socket, sender_addr, 'K', 0, 0);
 
             write_binary_file("new_" + file_name, file);
             all_msgs.push_back("SERVER: File received");
@@ -158,8 +163,15 @@ void reader_UDP(int in_socket)
             std::string in_nick, in_msg;
             bool ok = client.parse_unicast(msg, in_nick, in_msg);
 
-            std::string msg_to_push = in_nick + ": " + in_msg;
-            all_msgs.push_back(msg_to_push);
+            if (ok)
+            {
+                std::string msg_to_push = in_nick + ": " + in_msg;
+                all_msgs.push_back(msg_to_push);
+
+                client.send_message_udp_AN(in_socket, sender_addr, 'K', 0, 0);
+            }
+            else
+                client.send_message_udp_AN(in_socket, sender_addr, 'N', 0, 0);
             break;
         }
         case 't':
@@ -176,6 +188,17 @@ void reader_UDP(int in_socket)
 
             all_msgs.push_back(msg_to_push);
 
+            break;
+        }
+        case 'K':
+        {
+            can_continue = true;
+            break;
+        }
+        case 'N':
+        {
+            resend = true;
+            can_continue = false;
             break;
         }
         default:
@@ -330,7 +353,18 @@ int main(void)
                 if (is_tcp)
                     prt_send_TCP::broadcast(msg, SocketFD);
                 else
+                {
                     client.send_broadcast(msg, nick, SocketFD, stSockAddr);
+                    while(!can_continue)
+                    {
+                        if (resend)
+                        {
+                            client.send_broadcast(msg, nick, SocketFD, stSockAddr);
+                            resend = false;
+                        }
+                    }
+                    can_continue = false;
+                }
             }
             else
             std::cout << "Please login first!\n";
@@ -352,7 +386,19 @@ int main(void)
                 if (is_tcp)
                     prt_send_TCP::unicast(msg, dst, SocketFD);
                 else
+                {
                     client.send_unicast(msg, dst, nick, SocketFD, stSockAddr);
+                    while(!can_continue)
+                    {
+                        if (resend)
+                        {
+                            client.send_unicast(msg, dst, nick, SocketFD, stSockAddr);
+                            resend = false;
+                        }
+                    }
+
+                    can_continue = false;
+                }
             }
             else
                 std::cout << "Please login first!\n";
@@ -365,7 +411,10 @@ int main(void)
                 if (is_tcp)
                     prt_send_TCP::list(SocketFD);
                 else
+                {
                     client.send_list(SocketFD, stSockAddr);
+                    can_continue = false;
+                }
             }
             else
                 std::cout << "Please login first!\n";
@@ -393,7 +442,19 @@ int main(void)
                 if (is_tcp)
                     prt_send_TCP::file(file_name, file, dst, SocketFD);
                 else
+                {
                     client.send_file(file_name, file, dst, nick, SocketFD, stSockAddr);
+                    while (!can_continue)
+                    {
+                        if (resend)
+                        {
+                            client.send_file(file_name, file, dst, nick, SocketFD, stSockAddr);
+                            resend = false;
+                        }
+                    }
+
+                    can_continue = false;
+                }
             }
             else
                 std::cout << "Please login first!\n";

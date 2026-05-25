@@ -67,10 +67,17 @@ public:
         recvfrom(in_socket, buf, 500, 0, (struct sockaddr*)&sender_addr, &addr_len);
 
         std::string pkt(buf, 500);
+
+        char fr = pkt.front();
+        if (fr == 'K' || fr == 'N')
+            return std::string(1, fr);
+
+
         int total = std::stoi(pkt.substr(0, 2));
         int count = std::stoi(pkt.substr(2, 2));
         int sq_n  = std::stoi(pkt.substr(4, 4));
         std::string payload = pkt.substr(8);
+
 
         total_expected[sq_n] = total;
         fragments[sq_n][count] = payload;
@@ -82,6 +89,11 @@ public:
         }
         
         return to_return;
+    }
+
+    void add_sequence()
+    {
+        sequence_number++;
     }
 
 protected:

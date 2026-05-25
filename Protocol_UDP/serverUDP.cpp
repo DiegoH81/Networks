@@ -24,6 +24,9 @@ std::map<std::string, int> clientsTCP;
 std::mutex clients_mutex;
 UDPServer server;
 
+
+bool can_continue = false;
+bool resend= false;
 bool is_tcp = false;
 
 
@@ -184,6 +187,18 @@ void udp_reader(int in_socket)
         
         switch(opt)
         {
+        case 'K':
+        {
+            server.add_sequence();
+            can_continue = true;
+            break;
+        }
+        case 'N':
+        {
+            resend = true;
+            can_continue = false;
+            break;
+        }
         case 'L':
         {
             std::string in_nick;
@@ -191,6 +206,7 @@ void udp_reader(int in_socket)
 
             if (arrived_ok)
             {
+
                 if (clients.find(in_nick) != clients.end())
                 {
                     server.send_error("Username already taken!", in_socket, sender_addr);
@@ -217,9 +233,11 @@ void udp_reader(int in_socket)
             
             if (!receieved_msg)
             {
-                std::cout << "Corrupted data\n";
+                server.send_message_udp_AN(in_socket, sender_addr, 'N', 0, 0);
                 continue;
             }
+            server.send_message_udp_AN(in_socket, sender_addr, 'K', 0, 0);
+            
 
             for (auto &c : clients)
                 server.send_broadcast(in_msg, in_nick, in_socket, c.second);
@@ -232,8 +250,12 @@ void udp_reader(int in_socket)
             bool Receieved_file = server.parse_file(msg, ori, dest, file_name, file);
             
             if (!Receieved_file)
+            {
+                server.send_message_udp_AN(in_socket, sender_addr, 'N', 0, 0);
                 continue;
-            
+            }
+            server.send_message_udp_AN(in_socket, sender_addr, 'K', 0, 0);
+
             if (clients.find(dest) == clients.end())
             {
                 server.send_error("Client not found!", in_socket, sender_addr);
@@ -248,6 +270,13 @@ void udp_reader(int in_socket)
             std::string in_nick, in_msg, in_ori;
             bool receieved_unicast = server.parse_unicast(msg, in_nick, in_msg, in_ori);
 
+            if (!receieved_unicast)
+            {
+                server.send_message_udp_AN(in_socket, sender_addr, 'N', 0, 0);
+                continue;
+            }
+
+            server.send_message_udp_AN(in_socket, sender_addr, 'K', 0, 0);
             if (clients.find(in_nick) == clients.end())
             {
                 server.send_error("Client not found!", in_socket, sender_addr);
