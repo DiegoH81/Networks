@@ -130,7 +130,7 @@ char get_checksum(std::string to_hash)
     for (auto &c : to_hash)
         total_sum += c;
     
-    total_sum %= 256;
+    total_sum %= 7;
 
     return total_sum;
 }
