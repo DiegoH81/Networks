@@ -170,4 +170,23 @@ int get_int_parse(std::string& in_str, int n)
     return std::stoi(num);
 }
 
+void print_pkt(std::string in_paket, std::string msg)
+{
+    //char print_buf[501];
+    //memset(print_buf, 0, 501);
+    //memcpy(print_buf, in_paket.c_str(), 500);
+
+    std::cerr << msg << " << ";
+    
+    for (unsigned char c : in_paket)
+    {
+         if (c >= 32 && c < 127)
+            std::cerr << c;
+        else
+            std::cerr << "?";// << int(c);
+    }
+
+    std::cerr << " >>" << std::endl;
+}
+
 #endif

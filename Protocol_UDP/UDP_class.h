@@ -14,30 +14,41 @@ class UDPProtocol
 {
 public:
     UDPProtocol():
-        chunk_order_length(2), seq_num_length(4), msg_id_length(6),
+        chunk_order_length(2), seq_num_length(4), msg_id_length(6), current_id(0),
         fragments()
     {}
 
     // UDP
     void send_message_udp(int in_socket, struct sockaddr_in& target_addr, std::string in_message)
     {
+
         int remaining_size = 500 - chunk_order_length - seq_num_length - msg_id_length - 1;
 
         auto splitted_msg = split_string(in_message, remaining_size);
         
         int total_msgs = splitted_msg.size();
+
+        std::cout << "TOTAL MSG TO SEND: " << total_msgs << "\n";
+
         for (int i = 0; i < total_msgs; i++)
         {
             std::string &current_string = splitted_msg[i];
-            current_string.resize(remaining_size, '#');
-            std::string hash = std::string(1, get_checksum(current_string));
             
+            if (current_string.size() < remaining_size)
+                current_string.resize(remaining_size, '#');
+
+            std::string hash = std::string(1, get_checksum(current_string));
             std::string full_packet;
             std::string chunk_order = "00";
+            
             if (total_msgs == 1) // 11 0000
             {
                 full_packet = hash + "11" + get_number(0, seq_num_length) + get_number(current_id, msg_id_length) + current_string;
+
+                print_pkt(full_packet, "SENDING");
+
                 sendto(in_socket, full_packet.c_str(), 500, 0, (struct sockaddr*)&target_addr, sizeof(target_addr));
+                usleep(10000);
                 return;
             }
             else if (i == 0)
@@ -45,8 +56,9 @@ public:
             else if (i == total_msgs - 1)
                 chunk_order = "11";
             
-            
             full_packet = hash + chunk_order + get_number(i + 1, seq_num_length) + get_number(current_id, msg_id_length) + current_string;
+            print_pkt(full_packet, "SENDING");
+
 
             sendto(in_socket, full_packet.c_str(), 500, 0, (struct sockaddr*)&target_addr, sizeof(target_addr));
         }
@@ -54,29 +66,45 @@ public:
 
     std::string recv_fragment(int in_socket, struct sockaddr_in& sender_addr)
     {
-        char buf[500];
+        std::string in_paket(500, '\0');
         socklen_t addr_len = sizeof(sender_addr);
-        recvfrom(in_socket, buf, 500, 0, (struct sockaddr*)&sender_addr, &addr_len);
+        recvfrom(in_socket, &in_paket[0], 500, 0, (struct sockaddr*)&sender_addr, &addr_len);
 
-        std::string in_paket(buf, 500);
+        print_pkt(in_paket, "RECEIEVING");
 
         std::string hash = parse_str(in_paket, 1);
         std::string chunk_order = parse_str(in_paket, chunk_order_length);
         int seq_number = get_int_parse(in_paket, seq_num_length);
         int msg_id = get_int_parse(in_paket, msg_id_length);
 
+        std::string new_hash(1, get_checksum(in_paket));
+
+        if (hash != new_hash)
+            std::cout << "Wrong hash at " << seq_number << "\n";
+
+
+        //std::string sender_key = std::string(inet_ntoa(sender_addr.sin_addr)) + ":" + std::to_string(ntohs(sender_addr.sin_port));
+        //std::cerr << "SENDER KEY: " << sender_key << "\n";
+
+
         if (chunk_order == "11" && seq_number == 0)
             return in_paket;
 
-        fragments[msg_id].push_back(in_paket);
+        fragments[msg_id][seq_number] = in_paket;
+
+
         if (chunk_order == "11") // FIN
         {
             std::string to_return;
 
+
             for (auto &piece : fragments[msg_id])
-                to_return += piece;
+                to_return += piece.second;
             
+
+            std::cout  << "RECEIEVED NUM: " << fragments[msg_id].size() << "\n";
             fragments.erase(msg_id);
+
             return to_return;
         }
 
@@ -85,7 +113,7 @@ public:
     }
 protected:
     int chunk_order_length, seq_num_length, msg_id_length, current_id;
-    std::map<int, std::vector<std::string>> fragments;
+    std::map<int, std::map<long int, std::string>> fragments;
 };
 
 
@@ -217,13 +245,15 @@ public:
 
     void parse_file(std::string in_str, std::string& ori, std::string& dest, std::string& file_name, std::string& file)
     {
+        std::cout << in_str.size() << "\n";
+
         int l_dest = get_int_parse(in_str, 5);
         dest = parse_str(in_str, l_dest);
         int l_file_name = get_int_parse(in_str, 3);
         file_name = parse_str(in_str, l_file_name);
         int l_ori = get_int_parse(in_str, 5);
         ori = parse_str(in_str, l_ori);
-        long int size_file = get_int_parse(in_str, 22);
+        long long int size_file = get_int_parse(in_str, 22);
         file = parse_str(in_str, size_file);
     }
 };
@@ -327,7 +357,7 @@ public:
         file_name = parse_str(in_str, l_file_name);
         int l_ori = get_int_parse(in_str, 5);
         ori = parse_str(in_str, l_ori);
-        long int size_file = get_int_parse(in_str, 22);
+        long long int size_file = get_int_parse(in_str, 22);
         file = parse_str(in_str, size_file);
     }
 

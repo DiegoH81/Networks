@@ -15,7 +15,7 @@
 #include <thread>
 #include <mutex>
 
-#include "protocols_TCP.h"
+//#include "protocols_TCP.h"
 #include "UDP_class.h"
 #include "aux_funcs.h"
 
@@ -23,105 +23,6 @@ std::map<std::string, struct sockaddr_in> clients;
 UDPServer server;
 
 bool can_continue = false;
-
-void udp_reader(int in_socket)
-{
-    struct sockaddr_in sender_addr;
-    
-    while(true)
-    {
-        std::string msg = server.recv_fragment(in_socket, sender_addr);
-        
-        if (msg.empty())
-            continue;
-        
-        char opt = msg.front();
-        msg = msg.substr(1);
-        
-        switch(opt)
-        {
-        case 'L':
-        {
-            std::string in_nick;
-            server.parse_login(msg, in_nick);
-
-            if (clients.find(in_nick) != clients.end())
-            {
-                server.send_error("Username already taken!", in_socket, sender_addr);
-                break;
-            }
-
-            server.send_ack(in_socket, sender_addr);
-            clients[in_nick] = sender_addr;
-
-            std::cout << "\n\n";
-            for (auto &c : clients)
-                std::cout << c.first << "\n";
-
-            break;
-        }
-        case 'B':
-        {
-            std::string in_msg, in_nick;
-            server.parse_broadcast(msg, in_msg, in_nick);
-            
-            for (auto &c : clients)
-                server.send_broadcast(in_msg, in_nick, in_socket, c.second);
-            
-            break;
-        }
-        case 'F':
-        {
-            std::string ori, dest, file_name, file;
-            server.parse_file(msg, ori, dest, file_name, file);
-            
-            if (clients.find(dest) == clients.end())
-            {
-                server.send_error("Client not found!", in_socket, sender_addr);
-                break;
-            }
-
-            server.send_file(file_name, file, dest, ori, in_socket, clients[dest]);
-            break;
-        }
-        case 'U':
-        {
-            std::string in_nick, in_msg, in_ori;
-            server.parse_unicast(msg, in_nick, in_msg, in_ori);
-
-            if (clients.find(in_nick) == clients.end())
-            {
-                server.send_error("Client not found!", in_socket, sender_addr);
-                break;
-            }
-            
-            server.send_unicast(in_msg, in_ori, in_socket, clients[in_nick]);
-            break;
-        }
-        case 'T':
-        {
-            std::vector<std::string> clients_vec;
-
-            for (auto &c : clients)
-                clients_vec.push_back(c.first);
-
-            server.send_list(clients_vec, in_socket, sender_addr);
-            break;
-        }
-        case 'O':
-        {
-            std::string in_nick;
-
-            server.parse_logout(msg, in_nick);
-            clients.erase(in_nick);
-
-            break;
-        }
-        default:
-        break;
-        }        
-    }
-}
 
 
 int main(void)
@@ -141,11 +42,105 @@ int main(void)
 
     bind(SocketFD,(const struct sockaddr *)&stSockAddr, sizeof(struct sockaddr_in));
 
-    system("clear");
+    //system("clear");
     printf("========= SERVER TERMINAL =========\n");
     
     
-    udp_reader(SocketFD);
+    struct sockaddr_in sender_addr;
+    
+    while(true)
+    {
+        std::string msg = server.recv_fragment(SocketFD, sender_addr);
+        
+        if (msg.empty())
+            continue;
+        
+        char opt = msg.front();
+        msg = msg.substr(1);
+        
+        switch(opt)
+        {
+        case 'L':
+        {
+            std::string in_nick;
+            server.parse_login(msg, in_nick);
+
+            if (clients.find(in_nick) != clients.end())
+            {
+                server.send_error("Username already taken!", SocketFD, sender_addr);
+                break;
+            }
+
+            server.send_ack(SocketFD, sender_addr);
+            clients[in_nick] = sender_addr;
+
+            std::cout << "\n\n";
+            for (auto &c : clients)
+                std::cout << c.first << "\n";
+
+            break;
+        }
+        case 'B':
+        {
+            std::string in_msg, in_nick;
+            server.parse_broadcast(msg, in_msg, in_nick);
+            
+            for (auto &c : clients)
+                server.send_broadcast(in_msg, in_nick, SocketFD, c.second);
+            
+            break;
+        }
+        case 'F':
+        {
+            std::string ori, dest, file_name, file;
+            server.parse_file(msg, ori, dest, file_name, file);
+            
+            if (clients.find(dest) == clients.end())
+            {
+                server.send_error("Client not found!", SocketFD, sender_addr);
+                break;
+            }
+
+            server.send_file(file_name, file, dest, ori, SocketFD, clients[dest]);
+            break;
+        }
+        case 'U':
+        {
+            std::string in_nick, in_msg, in_ori;
+            server.parse_unicast(msg, in_nick, in_msg, in_ori);
+
+            if (clients.find(in_nick) == clients.end())
+            {
+                server.send_error("Client not found!", SocketFD, sender_addr);
+                break;
+            }
+            
+            server.send_unicast(in_msg, in_ori, SocketFD, clients[in_nick]);
+            break;
+        }
+        case 'T':
+        {
+            std::vector<std::string> clients_vec;
+
+            for (auto &c : clients)
+                clients_vec.push_back(c.first);
+
+            server.send_list(clients_vec, SocketFD, sender_addr);
+            break;
+        }
+        case 'O':
+        {
+            std::string in_nick;
+
+            server.parse_logout(msg, in_nick);
+            clients.erase(in_nick);
+
+            break;
+        }
+        default:
+        break;
+        }        
+    }
     
     close(SocketFD);
     return 0;

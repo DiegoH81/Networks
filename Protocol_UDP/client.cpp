@@ -12,7 +12,7 @@
 #include <vector>
 #include <thread>
 
-#include "protocols_TCP.h"
+//#include "protocols_TCP.h"
 #include "UDP_class.h"
 
 bool connected = false;
@@ -114,7 +114,7 @@ int main(void)
 
     while(true)
     {
-        system("clear");
+        //system("clear");
 
 
         std::cout << "======= Chat log =======\n";
@@ -144,14 +144,10 @@ int main(void)
         std::cout << "Enter option: ";
         std::getline(std::cin, buffer);
 
-        int option = std::stoi(buffer);
-
-        switch (option)
-        {
-        case 1:
+        if (buffer == "1")
         {
             if (connected)
-                break;
+                continue;
 
             SocketFD = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -172,11 +168,8 @@ int main(void)
                     all_msgs.push_back("Server: Username already taken!");
                 
             } while (!connected);
-            
-            
-            break;
         }
-        case 2:
+        else if (buffer == "2")
         {
             if (connected)
             {
@@ -185,10 +178,8 @@ int main(void)
             }
             else
                 std::cout << "Please login first!\n";
-            
-            break;
         }
-        case 3:
+        else if (buffer == "3")
         {
             if (connected)
             {
@@ -199,11 +190,9 @@ int main(void)
                 client.send_broadcast(msg, nick, SocketFD, stSockAddr);
             }
             else
-            std::cout << "Please login first!\n";
-
-            break;
+                std::cout << "Please login first!\n";
         }
-        case 4:
+        else if (buffer == "4")
         {
             if (connected)
             {
@@ -220,17 +209,15 @@ int main(void)
             }
             else
                 std::cout << "Please login first!\n";
-            break;
         }
-        case 5:
+        else if (buffer == "5")
         {
             if (connected)
                 client.send_list(SocketFD, stSockAddr);
             else
                 std::cout << "Please login first!\n";
-            break;
         }
-        case 6:
+        else if (buffer == "6")
         {
             if (connected)
             {
@@ -246,17 +233,13 @@ int main(void)
                 if (file.empty())
                 {
                     all_msgs.push_back(std::string("ERROR: Empty or unexistent file"));
-                    break;
+                    continue;
                 }
 
                 client.send_file(file_name, file, dst, nick, SocketFD, stSockAddr);
             }
             else
                 std::cout << "Please login first!\n";
-            break;
-        }
-        default:
-            break;
         }
     }
 
