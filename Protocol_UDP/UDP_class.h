@@ -48,7 +48,7 @@ public:
                 print_pkt(full_packet, "SENDING");
 
                 sendto(in_socket, full_packet.c_str(), 500, 0, (struct sockaddr*)&target_addr, sizeof(target_addr));
-                usleep(10000);
+                usleep(1000);
                 return;
             }
             else if (i == 0)
@@ -61,6 +61,7 @@ public:
 
 
             sendto(in_socket, full_packet.c_str(), 500, 0, (struct sockaddr*)&target_addr, sizeof(target_addr));
+            usleep(1000);
         }
     }
 
