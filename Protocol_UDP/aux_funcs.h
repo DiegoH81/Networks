@@ -173,7 +173,7 @@ int get_int_parse(std::string& in_str, int n)
 
 void print_pkt(std::string in_paket, std::string msg)
 {
-    std::cout << msg  << " : "<< " << " << in_paket << " >>\n";
+    std::cout << "\nPaket size " << in_paket.size() << "b " << msg  << " : "<< " << " << in_paket << " >>\n\n";
     
     /*
     for (unsigned char c : in_paket)
