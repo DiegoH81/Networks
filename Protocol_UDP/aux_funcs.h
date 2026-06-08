@@ -132,7 +132,8 @@ char get_checksum(std::string to_hash)
     
     total_sum %= 7;
 
-    return total_sum;
+    std::string to_return = std::to_string(total_sum);
+    return to_return[0];
 }
 
 std::vector<std::string> split_string(std::string in_str, int batch_size)
@@ -172,21 +173,17 @@ int get_int_parse(std::string& in_str, int n)
 
 void print_pkt(std::string in_paket, std::string msg)
 {
-    //char print_buf[501];
-    //memset(print_buf, 0, 501);
-    //memcpy(print_buf, in_paket.c_str(), 500);
-
-    std::cerr << msg << " << ";
+    std::cout << msg  << " : "<< " << " << in_paket << " >>\n";
     
+    /*
     for (unsigned char c : in_paket)
     {
-         if (c >= 32 && c < 127)
-            std::cerr << c;
+        if (c >= 32 && c < 127)
+        std::cerr << c;
         else
-            std::cerr << "?";// << int(c);
+        std::cerr << "?";// << int(c);
     }
-
-    std::cerr << " >>" << std::endl;
+    */
 }
 
 #endif
