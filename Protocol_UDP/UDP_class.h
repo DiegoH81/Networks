@@ -45,6 +45,7 @@ public:
             {
                 full_packet = hash + "11" + get_number(0, seq_num_length) + get_number(current_id, msg_id_length) + current_string;
 
+                std::cout << "PKT SIZE: " << full_packet.size() << "\n";
                 print_pkt(full_packet, "SENDING");
 
                 sendto(in_socket, full_packet.c_str(), 500, 0, (struct sockaddr*)&target_addr, sizeof(target_addr));
@@ -57,6 +58,7 @@ public:
                 chunk_order = "11";
             
             full_packet = hash + chunk_order + get_number(i + 1, seq_num_length) + get_number(current_id, msg_id_length) + current_string;
+            std::cout << "PKT SIZE: " << full_packet.size() << "\n";
             print_pkt(full_packet, "SENDING");
 
 
@@ -71,6 +73,7 @@ public:
         socklen_t addr_len = sizeof(sender_addr);
         recvfrom(in_socket, &in_paket[0], 500, 0, (struct sockaddr*)&sender_addr, &addr_len);
 
+        std::cout << "PKT SIZE receieved: " << in_paket.size() << "\n";
         print_pkt(in_paket, "RECEIEVING");
 
         std::string hash = parse_str(in_paket, 1);
