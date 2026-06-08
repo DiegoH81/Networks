@@ -14,15 +14,14 @@ class UDPProtocol
 {
 public:
     UDPProtocol():
-        chunk_order_length(2), seq_num_length(4), msg_id_length(6), current_id(0),
-        fragments()
+        chunk_order_length(2), seq_num_length(4), fragments()
     {}
 
     // UDP
     void send_message_udp(int in_socket, struct sockaddr_in& target_addr, std::string in_message)
     {
 
-        int remaining_size = 500 - chunk_order_length - seq_num_length - msg_id_length - 1;
+        int remaining_size = 500 - chunk_order_length - seq_num_length - 1;
 
         auto splitted_msg = split_string(in_message, remaining_size);
         
@@ -43,9 +42,9 @@ public:
             
             if (total_msgs == 1) // 11 0000
             {
-                full_packet = hash + "11" + get_number(0, seq_num_length) + get_number(current_id, msg_id_length) + current_string;
+                full_packet = hash + "11" + get_number(0, seq_num_length) + current_string;
 
-                std::cout << "PKT SIZE: " << full_packet.size() << "\n";
+                std::cout << "PKT SIZE sending: " << full_packet.size() << "\n";
                 print_pkt(full_packet, "SENDING");
 
                 sendto(in_socket, full_packet.c_str(), 500, 0, (struct sockaddr*)&target_addr, sizeof(target_addr));
@@ -57,8 +56,8 @@ public:
             else if (i == total_msgs - 1)
                 chunk_order = "11";
             
-            full_packet = hash + chunk_order + get_number(i + 1, seq_num_length) + get_number(current_id, msg_id_length) + current_string;
-            std::cout << "PKT SIZE: " << full_packet.size() << "\n";
+            full_packet = hash + chunk_order + get_number(i + 1, seq_num_length) + current_string;
+            std::cout << "PKT SIZE sending: " << full_packet.size() << "\n";
             print_pkt(full_packet, "SENDING");
 
 
@@ -73,13 +72,15 @@ public:
         socklen_t addr_len = sizeof(sender_addr);
         recvfrom(in_socket, &in_paket[0], 500, 0, (struct sockaddr*)&sender_addr, &addr_len);
 
+        std::string sender_key = std::string(inet_ntoa(sender_addr.sin_addr)) + ":" + std::to_string(ntohs(sender_addr.sin_port));
+
+
         std::cout << "PKT SIZE receieved: " << in_paket.size() << "\n";
         print_pkt(in_paket, "RECEIEVING");
 
         std::string hash = parse_str(in_paket, 1);
         std::string chunk_order = parse_str(in_paket, chunk_order_length);
         int seq_number = get_int_parse(in_paket, seq_num_length);
-        int msg_id = get_int_parse(in_paket, msg_id_length);
 
         std::string new_hash(1, get_checksum(in_paket));
 
@@ -94,30 +95,28 @@ public:
         if (chunk_order == "11" && seq_number == 0)
             return in_paket;
 
-        fragments[msg_id][seq_number] = in_paket;
+        fragments[sender_key][seq_number] = in_paket;
 
 
         if (chunk_order == "11") // FIN
         {
             std::string to_return;
 
-
-            for (auto &piece : fragments[msg_id])
+            for (auto &piece : fragments[sender_key])
                 to_return += piece.second;
             
 
-            std::cout  << "RECEIEVED NUM: " << fragments[msg_id].size() << "\n";
-            fragments.erase(msg_id);
+            std::cout  << "RECEIEVED NUM: " << fragments[sender_key].size() << "\n";
+            fragments.erase(sender_key);
 
             return to_return;
         }
 
-        current_id++;
         return "";
     }
 protected:
-    int chunk_order_length, seq_num_length, msg_id_length, current_id;
-    std::map<int, std::map<long int, std::string>> fragments;
+    int chunk_order_length, seq_num_length;
+    std::map<std::string, std::map<long int, std::string>> fragments;
 };
 
 
