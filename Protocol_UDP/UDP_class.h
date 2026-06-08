@@ -5,6 +5,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <thread>
+#include <chrono>
 
 #include "aux_funcs.h"
 #include "json.hpp"
@@ -44,11 +46,11 @@ public:
             {
                 full_packet = hash + "11" + get_number(0, seq_num_length) + current_string;
 
-                std::cout << "PKT SIZE sending: " << full_packet.size() << "\n";
+                //std::cout << "PKT SIZE sending: " << full_packet.size() << "\n";
                 print_pkt(full_packet, "SENDING");
 
                 sendto(in_socket, full_packet.c_str(), 500, 0, (struct sockaddr*)&target_addr, sizeof(target_addr));
-                usleep(1000);
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 return;
             }
             else if (i == 0)
@@ -57,12 +59,12 @@ public:
                 chunk_order = "11";
             
             full_packet = hash + chunk_order + get_number(i + 1, seq_num_length) + current_string;
-            std::cout << "PKT SIZE sending: " << full_packet.size() << "\n";
+            //std::cout << "PKT SIZE sending: " << full_packet.size() << "\n";
             print_pkt(full_packet, "SENDING");
 
 
             sendto(in_socket, full_packet.c_str(), 500, 0, (struct sockaddr*)&target_addr, sizeof(target_addr));
-            usleep(1000);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
@@ -75,7 +77,7 @@ public:
         std::string sender_key = std::string(inet_ntoa(sender_addr.sin_addr)) + ":" + std::to_string(ntohs(sender_addr.sin_port));
 
 
-        std::cout << "PKT SIZE receieved: " << in_paket.size() << "\n";
+        //std::cout << "PKT SIZE receieved: " << in_paket.size() << "\n";
         print_pkt(in_paket, "RECEIEVING");
 
         std::string hash = parse_str(in_paket, 1);
@@ -90,7 +92,6 @@ public:
 
         //std::string sender_key = std::string(inet_ntoa(sender_addr.sin_addr)) + ":" + std::to_string(ntohs(sender_addr.sin_port));
         //std::cerr << "SENDER KEY: " << sender_key << "\n";
-
 
         if (chunk_order == "11" && seq_number == 0)
             return in_paket;
