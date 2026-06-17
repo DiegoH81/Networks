@@ -12,13 +12,18 @@
 #include <vector>
 #include <thread>
 
-//#include "protocols_TCP.h"
+
 #include "UDP_class.h"
+
+
+std::string all_info;
 
 bool connected = false;
 
 UDPClient client;
 std::vector<std::string> all_msgs;
+std::chrono::high_resolution_clock::time_point file_rtt_start;
+
 
 void reader_UDP(int in_socket)
 {
@@ -57,7 +62,27 @@ void reader_UDP(int in_socket)
         {
             auto t_end = std::chrono::high_resolution_clock::now();
             double ping_ms = std::chrono::duration<double, std::milli>(t_end - client.ping_start).count();
-            all_msgs.push_back("PING: " + std::to_string(ping_ms) + " ms");
+            
+
+            std::cout << "-----------------------------------------------------\n"
+            std::cout << "PING: " << std::to_string(ping_ms) << " ms"
+            std::cout << "-----------------------------------------------------\n"
+            break;
+        }
+        case 'K':
+        {
+            auto rtt_file_end = std::chrono::high_resolution_clock::now();
+
+            if (file_rtt_start == std::chrono::high_resolution_clock::time_point())
+                break;
+
+            double rtt_file_ms = std::chrono::duration<double, std::milli>(rtt_file_end - file_rtt_start).count();
+
+            std::cout << "\n\n\n\n\n\n\n\n";
+            std::cout << "-----------------------------------------------------\n"
+            std::cout << "RTT FILE: " << rtt_file_ms << " ms\n";
+            std::cout << "-----------------------------------------------------\n"
+            std::cout << "\n\n\n\n\n\n\n\n";
             break;
         }
         default:
@@ -138,7 +163,11 @@ int main(void)
 
                     auto t_rtt_end = std::chrono::high_resolution_clock::now();
                     double rtt_ms = std::chrono::duration<double, std::milli>(t_rtt_end - t_rtt_start).count();
+                    std::cout << "\n\n\n\n\n\n\n\n";
+                    std::cout << "-----------------------------------------------------\n"
                     std::cout << "RTT: " << rtt_ms << " ms\n";
+                    std::cout << "-----------------------------------------------------\n"
+                    std::cout << "\n\n\n\n\n\n\n\n";
                 }
                 else
                     all_msgs.push_back("Server: Username already taken!");
@@ -174,16 +203,14 @@ int main(void)
                     continue;
                 }
 
+                file_rtt_start = std::chrono::high_resolution_clock::now();
                 client.send_file(file_name, file, dst, nick, SocketFD, stSockAddr);
             }
             else
                 std::cout << "Please login first!\n";
         }
         else if (buffer == "4")
-        {
-            client.ping(SocketFD, stSockAddr);
-            
-        }
+            client.ping(SocketFD, stSockAddr);   
     }
 
     close(SocketFD);
