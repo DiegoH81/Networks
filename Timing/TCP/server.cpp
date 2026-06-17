@@ -76,8 +76,6 @@ void reader(int in_socket)
       case 'F':
       {
           
-          
-          
          std::string file, file_name, dest;
          auto t_start = std::chrono::high_resolution_clock::now();
          prt_recv::file_response(file_name, file, dest, in_socket);
@@ -91,12 +89,20 @@ void reader(int in_socket)
             break;
          }
 
+         
          prt_send::file_response(file_name, file, nick, clients[dest]);
+         
+         prt_send::k_response(in_socket);
          lock.unlock();
 
          auto t_end = std::chrono::high_resolution_clock::now();
          double processing_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-         std::cout << "NODAL processing time: " << processing_ms << " ms\n";
+         
+         std::cout << "\n\n\n\n\n\n\n\n";
+         std::cout << "-----------------------------------------------------\n"
+         std::cout << "NODAL - Processing time: " << processing_ms << " ms\n";
+         std::cout << "-----------------------------------------------------\n"
+         std::cout << "\n\n\n\n\n\n\n\n";
 
          break;
       }
