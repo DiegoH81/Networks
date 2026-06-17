@@ -75,11 +75,11 @@ void reader(int in_socket)
       }
       case 'F':
       {
-         auto t_start = std::chrono::high_resolution_clock::now();
-
-
+          
+          
+          
          std::string file, file_name, dest;
-
+         auto t_start = std::chrono::high_resolution_clock::now();
          prt_recv::file_response(file_name, file, dest, in_socket);
          
          std::unique_lock<std::mutex> lock(clients_mutex);

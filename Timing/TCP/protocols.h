@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <iostream>
 
 
 #include "json.hpp"
@@ -221,6 +222,13 @@ namespace prt_recv
       file_name = read_string(in_socket, L);
       L = read_number(in_socket, 5);
       dest = read_string(in_socket, L);
+
+      std::string whole_pkt = "F" + get_number(L, 15) + file + get_number(L, 5) + file_name + get_number(L, 5) + dest;
+      
+      std::string first_500 = whole_pkt.substr(0, 500);
+      std::string last_500  = whole_pkt.substr(whole_pkt.size() - 500);  
+      std::cout << first_500 << "\n";
+      std::cout << last_500 << "\n";
    }
 
 }
