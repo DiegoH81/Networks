@@ -93,11 +93,18 @@ int main(void)
                 break;
             }
 
+            
             server.send_file(file_name, file, dest, ori, SocketFD, clients[dest]);
+            server.send_ack(999, sender_addr);
 
              auto t_end = std::chrono::high_resolution_clock::now();
             double processing_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+
+            std::cout << "\n\n\n\n\n\n\n\n";
+            std::cout << "-----------------------------------------------------\n"
             std::cout << "NODAL - Processing time: " << processing_ms << " ms\n";
+            std::cout << "-----------------------------------------------------\n"
+            std::cout << "\n\n\n\n\n\n\n\n";
             break;
         }
         case 'O':
