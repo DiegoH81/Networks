@@ -226,7 +226,7 @@ namespace prt_recv
       std::string whole_pkt = "F" + get_number(L, 15) + file + get_number(L, 5) + file_name + get_number(L, 5) + dest;
       
       std::string first_500 = whole_pkt.substr(0, 500);
-      std::string last_500  = whole_pkt.substr(whole_pkt.size() - 500);  
+      std::string last_500  = whole_pkt.substr(whole_pkt.size() - 500);
       std::cout << first_500 << "\n";
       std::cout << last_500 << "\n";
    }
