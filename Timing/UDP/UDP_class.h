@@ -14,8 +14,11 @@
 class UDPProtocol
 {
 public:
+    float ping_time, rtt_time, nodal_proc;
+
     UDPProtocol():
-        chunk_order_length(2), seq_num_length(8), fragments()
+        chunk_order_length(2), seq_num_length(8), fragments(),
+        ping_time(0.0f), rtt_time(0.0f), nodal_proc(0.0f)
     {}
 
 
