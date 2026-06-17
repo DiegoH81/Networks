@@ -121,8 +121,8 @@ namespace prt_send
    
    void file(std::string file_name, std::string file, std::string dest, int in_socket)
    {
-      if(file.size() >= 100000)
-         file.resize(99999);
+      if(file.size() >= 1000000000000000)
+         file.resize(999999999999999);
 
       if(file_name.size() >= 100000)
          file_name.resize(99999);
@@ -131,8 +131,9 @@ namespace prt_send
          dest.resize(99999);
 
       int bytes = 5;
+      int bytes_length_file = 15;
 
-      std::string to_send = "F" + get_number(file.length(), bytes) + file + 
+      std::string to_send = "F" + get_number(file.length(), bytes_length_file) + file + 
                                   get_number(file_name.length(), bytes) + file_name +
                                   get_number(dest.length(), bytes) + dest;
       
@@ -161,8 +162,8 @@ namespace prt_send
    
    void file_response(std::string file_name, std::string file, std::string src, int in_socket)
    {
-      if(file.size() >= 100000)
-         file.resize(99999);
+      if(file.size() >= 1000000000000000)
+         file.resize(999999999999999);
 
       if(file_name.size() >= 100000)
          file_name.resize(99999);
@@ -171,8 +172,9 @@ namespace prt_send
          src.resize(99999);
 
       int bytes = 5;
+      int bytes_file = 15;
 
-      std::string to_send = "f" + get_number(file.length(), bytes) + file + 
+      std::string to_send = "f" + get_number(file.length(), bytes_file) + file + 
                                   get_number(file_name.length(), bytes) + file_name +
                                   get_number(src.length(), bytes) + src;
       
@@ -213,7 +215,7 @@ namespace prt_recv
 
    void file_response(std::string& file_name, std::string& file, std::string& dest, int in_socket)
    {
-      int L = read_number(in_socket, 5);
+      int L = read_number(in_socket, 15);
       file = read_string(in_socket, L);
       L = read_number(in_socket, 5);
       file_name = read_string(in_socket, L);
