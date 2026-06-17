@@ -20,6 +20,8 @@ bool connected = false;
 std::vector<std::string> all_msgs;
 std::chrono::high_resolution_clock::time_point ping_start;
 
+std::chrono::high_resolution_clock::time_point file_rtt_start;
+
 
 void reader(int in_socket)
 {
@@ -61,13 +63,29 @@ void reader(int in_socket)
       {
          std::string msg_to_push = "SERVER: K";
          all_msgs.push_back(msg_to_push);
+
+         auto rtt_file_end = std::chrono::high_resolution_clock::now();
+
+         if (file_rtt_start == std::chrono::high_resolution_clock::time_point())
+            break;
+
+         double rtt_file_ms = std::chrono::duration<double, std::milli>(rtt_file_end - file_rtt_start).count();
+
+         std::cout << "\n\n\n\n\n\n\n\n";
+         std::cout << "-----------------------------------------------------\n";
+         std::cout << "RTT FILE: " << rtt_file_ms << " ms\n";
+         std::cout << "-----------------------------------------------------\n";
+         std::cout << "\n\n\n\n\n\n\n\n";
          break;
       }
       case 'G':
       {
           auto t_end = std::chrono::high_resolution_clock::now();
           double ping_ms = std::chrono::duration<double, std::milli>(t_end - ping_start).count();
-          all_msgs.push_back("PING: " + std::to_string(ping_ms) + " ms");
+          
+          std::cout << "-----------------------------------------------------\n"
+          std::cout << "PING: " << std::to_string(ping_ms) << " ms"
+          std::cout << "-----------------------------------------------------\n"
           break;
       } 
       default:
@@ -151,7 +169,11 @@ int main(void)
             
              auto t_rtt_end = std::chrono::high_resolution_clock::now();
             double rtt_ms = std::chrono::duration<double, std::milli>(t_rtt_end - t_rtt_start).count();
+            std::cout << "\n\n\n\n\n\n\n\n";
+            std::cout << "-----------------------------------------------------\n"
             std::cout << "RTT: " << rtt_ms << " ms\n";
+            std::cout << "-----------------------------------------------------\n"
+            std::cout << "\n\n\n\n\n\n\n\n";
 
             if (connected)
                std::thread(reader, SocketFD).detach();
@@ -197,6 +219,7 @@ int main(void)
                break;
             }
 
+            file_rtt_start = std::chrono::high_resolution_clock::now();
             prt_send::file(file_name, file, dst, SocketFD);
          }
          else
